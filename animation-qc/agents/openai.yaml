@@ -1,0 +1,8 @@
+interface:
+  display_name: "动画底层质检"
+  short_description: "检查动图是否漂移、腾空、鬼畜或有抠图残留"
+  brand_color: "#5BA7E8"
+  default_prompt: "使用 $animation-qc 检查这张雪碧图，输出透明对齐版本、GIF 预览、audit 图和质检结论。"
+
+policy:
+  allow_implicit_invocation: true
