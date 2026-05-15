@@ -426,7 +426,7 @@ For composition warnings:
 Process a sprite with auto-detected grid:
 
 ```bash
-python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
+python3 scripts/process_sprite.py \
   --input /path/to/source.png \
   --out /tmp/animation-qc/action-name \
   --scene qc \
@@ -436,7 +436,7 @@ python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
 Process a sprite with explicit grid when auto-detection is uncertain:
 
 ```bash
-python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
+python3 scripts/process_sprite.py \
   --input /path/to/source.png \
   --out /tmp/animation-qc/action-name \
   --scene qc \
@@ -448,7 +448,7 @@ python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
 Audit only, without moving frames:
 
 ```bash
-python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
+python3 scripts/process_sprite.py \
   --input /path/to/source.png \
   --out /tmp/animation-qc/action-name \
   --scene qc \
@@ -459,7 +459,7 @@ python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
 Force alignment only when the user explicitly wants full anchor correction:
 
 ```bash
-python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
+python3 scripts/process_sprite.py \
   --input /path/to/source.png \
   --out /tmp/animation-qc/action-name \
   --scene qc \
@@ -470,7 +470,7 @@ python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
 QC with a character anchor profile:
 
 ```bash
-python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
+python3 scripts/process_sprite.py \
   --input /path/to/source.png \
   --out /tmp/animation-qc/action-name \
   --scene qc \
@@ -484,7 +484,7 @@ python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
 Preview selected useful frames:
 
 ```bash
-python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
+python3 scripts/process_sprite.py \
   --input /path/to/source.png \
   --out /tmp/animation-qc/action-name \
   --scene qc \
@@ -495,7 +495,7 @@ python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
 Preview with hand-authored timing:
 
 ```bash
-python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
+python3 scripts/process_sprite.py \
   --input /path/to/source.png \
   --out /tmp/animation-qc/action-name \
   --scene qc \
@@ -507,7 +507,7 @@ python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
 Preserve the first frame's original placement instead of centering in the cell:
 
 ```bash
-python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
+python3 scripts/process_sprite.py \
   --input /path/to/source.png \
   --out /tmp/animation-qc/action-name \
   --scene qc \
@@ -518,7 +518,7 @@ python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/process_sprite.py \
 Audit current product references:
 
 ```bash
-python3 /Users/fantianxin/.codex/skills/animation-qc/scripts/audit_product_usage.py \
+python3 scripts/audit_product_usage.py \
   /path/to/your/product-or-demo.html
 ```
 

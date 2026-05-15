@@ -523,7 +523,7 @@ Layout guide helper:
 Use the helper script when you need a concrete guide image for a sprite run:
 
 ```bash
-python3 /Users/fantianxin/.codex/skills/animation-sprite-workshop/scripts/make_layout_guide.py \
+python3 scripts/make_layout_guide.py \
   --cols 3 \
   --rows 2 \
   --cell 512 \
@@ -538,7 +538,7 @@ Basic sprite gate helper:
 Use the gate immediately after generation and before `$animation-qc`:
 
 ```bash
-python3 /Users/fantianxin/.codex/skills/animation-sprite-workshop/scripts/check_sprite_gate.py \
+python3 scripts/check_sprite_gate.py \
   --input /path/to/raw-sheet.png \
   --cols 4 \
   --rows 2 \

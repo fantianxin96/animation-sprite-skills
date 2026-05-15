@@ -1,99 +1,63 @@
 # Animation Sprite Skills
 
-一句话：这是一套把 AI 生成的角色动作图，整理成可用透明 GIF 的 Codex skills。
+AI 画出一张“看起来像雪碧图”的图片很容易，真正难的是让它变成可以被程序稳定切帧、对齐、去背景、导出透明 GIF 的动画资产。
 
-我做它，是因为 AI 很容易画出“看起来像雪碧图”的东西，但真正拿去做桌宠、表情包、小游戏、产品动效时，会冒出一堆细小问题。
+这个仓库整理了两个 Codex skill：
 
-格子看起来是 `4x2`，实际图片比例却不对。  
-角色看起来在动，切成 GIF 后每帧都在漂。  
-绿色背景去掉了，边缘还有绿边。  
-白色分隔线看着很细，播放时突然闪成一条线。  
-透明 GIF 明明导出了，在某些预览器里还是会闪黑边。
+- `animation-sprite-workshop`：在生图前先把雪碧图规格定清楚，避免模型只画出“视觉上像格子”的图。
+- `animation-qc`：在生图后做切帧、去绿底、清理分隔线、对齐主体、导出透明 GIF 和检查报告。
 
-所以这套流程没有只停在“帮我写一个生图 prompt”。它把动画资产拆成两段：先把图生成得像资产，再把图处理成资产。
+它们解决的是同一个问题：把 AI 生成图从“好看”推进到“能用”。
 
-![real workflow](animation-sprite-workshop/docs/images/workflow-with-subject.png)
+![raw sheet to transparent asset](animation-sprite-workshop/docs/images/before-after-sprite-qc.png)
 
-## What This Includes
+左边是模型生成的 raw sheet：有绿底、有白色分隔线，适合作为中间源。  
+右边是 QC 后的透明资产：主体被放回稳定的方格里，背景和边缘残线被清理，可以继续导出 GIF 或接入产品。
 
-这个仓库里有两个 skill。
+## 为什么需要这套流程
 
-`animation-sprite-workshop` 负责生图前的事情。它会帮你把一个模糊想法整理成明确的 sprite 生产要求：角色基准图、动作方向、格子数量、每格尺寸、layout guide、raw sheet 规则，还有生成后必须通过的几何检查。
+很多 sprite 问题不是画风问题，而是几何问题。
 
-`animation-qc` 负责生图后的事情。它会切帧、去绿、清白线、对齐主体中心和脚底线，检查节奏，最后导出透明 GIF、audit 图和 report。
+比如提示词里写了 `4x2 sprite sheet`，模型可能真的画出 4 列 2 行，但下载到本地的图片尺寸却不是标准 `2:1`。人眼看着像格子，脚本一切就会出错：每格不是正方形，主体位置漂移，或者某些分隔线被当成角色内容带进 GIF。
 
-它们配合起来，大概是这个顺序：
+所以这里先把规则拆开：
 
-```text
-idea / reference
--> canonical base
--> sprite geometry contract
--> layout guide or raw template
--> raw sprite sheet
--> geometry gate
--> QC cleanup and alignment
--> transparent GIF
-```
+- 每一帧必须在独立的 `1:1` 方格里。
+- 整张图比例必须等于 `cols:rows`，例如 `4x2` 就是 `2:1`。
+- 主体不能跨格，不能贴边，不能让道具或特效挡住身体锚点。
+- raw sheet 可以用绿底和白线做中间源，但最终资产必须透明。
+- QC 不是重画工具。动作本身坏了，就应该回到生图阶段重做。
 
-## The Real Problem
+这也是为什么 workflow 里要先有 contract，再有 raw sheet，最后才进入 QC。
 
-雪碧图最麻烦的地方，不是“有没有画出动作”。  
-麻烦的是它要能被机器切开。
+![workflow with subject](animation-sprite-workshop/docs/images/workflow-with-subject.png)
 
-比如这张 raw sheet：
+## 一张图从哪里开始变标准
 
-![seal raw sheet](animation-sprite-workshop/docs/images/seal-raw-sheet-4x2.png)
+标准不是在最后导出 GIF 时才补救，而是在生图前就确定。
 
-它不是一张海报，也不是一个角色摆在整张图中间。它必须满足几个很死的规则：
-
-- `4 columns x 2 rows`
-- 整张图比例是 `2:1`
-- 每个 cell 都是 `1:1`
-- 每个 cell 里都有一个完整主体
-- 主体不能跨格
-- 绿色背景和白色分隔线只是中间源，最终必须清掉
-
-这几个规则只要错一个，后面就会很痛苦。
-
-## Step 1: Use animation-sprite-workshop
-
-先别急着生图。先把这个合同写清楚：
+`animation-sprite-workshop` 会先写清楚这张 sheet 的规格：
 
 ```yaml
-sprite_geometry_contract:
-  cols: 4
-  rows: 2
-  frame_count: 8
-  target_canvas_px: [2048, 1024]
-  target_cell_px: [512, 512]
-  cell_aspect: 1:1
-  whole_sheet_aspect: 4:2
-  playback: loop
-  background: chroma_green
-  raw_sheet_format: chroma_green_with_white_dividers
-  anchor_policy: body center stable, contact baseline stable
+cols: 4
+rows: 2
+frame_count: 8
+target_canvas_px: [2048, 1024]
+target_cell_px: [512, 512]
+cell_aspect: 1:1
+whole_sheet_aspect: 4:2
+playback: loop
 ```
 
-然后在 prompt 里明确写出来：
+这份 contract 的作用很直接：告诉模型、脚本和后续 QC，整张图应该是什么比例，每个 cell 应该多大，哪些格子有效，哪些格子是占位。
 
-```text
-4 columns x 2 rows.
-Whole sheet aspect ratio exactly 2:1.
-Every cell is exactly square.
-Each frame stays fully inside its own 1:1 cell.
-Use pure chroma green background and thin white dividers.
-No labels, no numbers, no guide marks.
-```
-
-如果模型支持输入图，可以先给它 layout guide：
+生图时可以使用 layout guide 或 raw template 辅助模型理解格子结构：
 
 ![layout guide](animation-sprite-workshop/docs/images/layout-guide-4x2.png)
 
-如果模型经常把 layout guide 当成画面内容抄进去，就换成 raw template 思路：
-
 ![raw template](animation-sprite-workshop/docs/images/raw-template-4x2.png)
 
-生成后不要凭眼睛说“差不多”。先跑 gate：
+但 guide 只是施工图，不是最终素材。最终素材仍然要通过几何检查。
 
 ```bash
 python3 animation-sprite-workshop/scripts/check_sprite_gate.py \
@@ -107,12 +71,26 @@ python3 animation-sprite-workshop/scripts/check_sprite_gate.py \
   --check-visible-grid
 ```
 
-如果 bitmap 尺寸不对，它就不能直接进入 QC。  
-有些图视觉上像 `4x2`，但实际是 `1774x887`。这种图只能在格子边界非常清楚时做确定性重排。不能补画，不能发明新帧。否则就重新生成。
+只有通过 sprite gate 的图，才适合进入 `animation-qc`。
 
-## Step 2: Use animation-qc
+## Raw Sheet 示例
 
-过了 gate，再进入 QC。
+这类图适合作为中间源：
+
+![seal raw sheet](animation-sprite-workshop/docs/images/seal-raw-sheet-4x2.png)
+
+它有几个优点：
+
+- 4 列 2 行清楚。
+- 每格只有一个完整主体。
+- 绿底容易抠除。
+- 白线能帮助脚本判断格子边界。
+
+但它还不是最终资产，因为绿底、白线、主体对齐和播放节奏都还没处理。
+
+## QC 后会得到什么
+
+`animation-qc` 会把 raw sheet 切成帧，清理背景和边缘残线，按锚点对齐主体，并输出透明 GIF。
 
 ```bash
 python3 animation-qc/scripts/process_sprite.py \
@@ -128,19 +106,19 @@ python3 animation-qc/scripts/process_sprite.py \
   --line-clean-margin 40
 ```
 
-QC 会输出一组文件：
+常见输出包括：
 
 ```text
-qc-example-action-aligned-transparent.png
-qc-example-action-preview.gif
-qc-example-action-transparent.gif
-qc-example-action-audit.png
-qc-example-action-report.json
-qc-example-action-timing.json
-qc-example-action-rhythm-advice.json
+aligned-transparent.png
+preview.gif
+transparent.gif
+audit.png
+report.json
+timing.json
+rhythm-advice.json
 ```
 
-处理后的透明 sheet 长这样：
+QC 后的透明 sheet：
 
 ![seal qc aligned sheet](animation-qc/docs/images/seal-qc-aligned-sheet.png)
 
@@ -148,13 +126,13 @@ qc-example-action-rhythm-advice.json
 
 ![seal final gif](animation-qc/docs/images/seal-final-transparent.gif)
 
-## The Edge-Line Lesson
+## 边缘线为什么要单独检查
 
-这套 skill 里有一个很具体的规则，是实际踩坑踩出来的。
+白色或绿色边缘线经常不是最终导出时才出现的，而是 raw sheet 里的网格线、背景残留或 GIF disposal/background index 处理不干净造成的。
 
-一开始我只检查 GIF 最外圈几像素，结果用户还是看到了白线。后来才发现，白线不是在最外圈。它来自 raw sheet 的白色分隔线。对齐时，整帧被平移，分隔线也跟着被推到了画面内部，比如 `x=14`、`x=20` 这种位置。
+更麻烦的是，分隔线有时一开始在 cell 边缘，经过对齐后会被移动到画面内部，于是播放时会闪一下。
 
-所以 QC 现在不是只裁最外层边缘。它会按这个顺序处理：
+所以 QC 的清理顺序是：
 
 ```text
 split cell
@@ -167,75 +145,42 @@ split cell
 -> export gif
 ```
 
-示意图：
+也就是说，不只检查四周最外圈，还要检查靠近边缘的一段区域。
 
 ![edge cleaning example](animation-qc/docs/images/qc-edge-cleaning-example.png)
 
-report 里也不会只写一个模糊的 `edge_artifacts: pass`。现在会拆开看：
+## 什么时候不要继续修
 
-```json
-{
-  "edge_artifacts": {
-    "outer_border_clean": true,
-    "near_edge_long_line_clean": true
-  },
-  "gif_export": {
-    "transparent_index_ok": true,
-    "gif_background_index_ok": true
-  }
-}
-```
+QC 适合处理机械问题，不适合修动作设计。
 
-这几个字段分别抓不同问题。少一个都不够。
+下面这些情况更适合重新生成：
 
-## When To Regenerate
+- 角色身份在不同帧里变了。
+- 动作本身不连贯，看不出同一个行为。
+- 角色太复杂，但 cell 太小，细节已经糊掉。
+- 主体贴边或跨格。
+- 特效、道具、文字遮住了身体锚点。
+- 动作需要粒子、发光、遮罩、文字层或复杂缓动。
 
-QC 不是魔法。它能修机械问题，不能修画坏的动作。
+这时应该改生图方案：减少单张 sheet 的帧数、加大 cell、分批生成，或者把角色和特效拆层处理。
 
-这些情况建议回到生成阶段：
-
-- 每帧角色长得不一样。
-- 动作不是连续过程，只是几张无关表情。
-- 角色太大，清边会切到身体。
-- cell 太小，细节糊掉。
-- 道具和主体粘在一起，anchor 很难判断。
-- 需要文字、粒子、光效、遮罩和复杂缓动。
-
-这时候不要硬救。拆小批次，放大 cell，重新生成。
-
-## Repository Layout
+## 仓库结构
 
 ```text
 animation-sprite-workshop/
   SKILL.md
   README.md
-  agents/
-  references/
   scripts/
   docs/images/
 
 animation-qc/
   SKILL.md
   README.md
-  agents/
   scripts/
   docs/images/
 ```
 
-更多细节：
+详细说明：
 
 - [animation-sprite-workshop/README.md](animation-sprite-workshop/README.md)
 - [animation-qc/README.md](animation-qc/README.md)
-
-## What Not To Commit
-
-同步到 GitHub 时，不要提交这些：
-
-```text
-__pycache__/
-*.pyc
-private project output folders
-temporary generated assets that are not docs examples
-```
-
-公共文档里可以保留真实案例图。它比抽象占位图更容易说明问题。这里的海豹案例就是为了让读者一眼看懂：主体怎么进格子，raw sheet 怎么进 QC，最后怎么变成透明 GIF。
